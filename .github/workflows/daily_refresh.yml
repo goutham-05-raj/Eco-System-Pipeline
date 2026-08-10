@@ -1,0 +1,40 @@
+name: Daily Pipeline Refresh
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # runs every day at 2:00 AM UTC (7:30 AM IST)
+  workflow_dispatch:        # allows manual trigger from GitHub UI
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          DATABASE_URL: sqlite+aiosqlite:///graphone.db
+        run: |
+          python run.py
+
+      - name: Commit updated database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add graphone.db
+          git diff --staged --quiet || git commit -m "Auto: daily data refresh $(date -u '+%Y-%m-%d')"
+          git push
