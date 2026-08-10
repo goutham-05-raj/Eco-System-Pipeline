@@ -30,6 +30,7 @@ rapidfuzz
 # Export
 gspread
 google-auth
+oauth2client
 
 # Observability
 structlog
