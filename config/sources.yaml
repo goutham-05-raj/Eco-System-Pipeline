@@ -1,0 +1,112 @@
+sources:
+  papers:
+    - name: arxiv
+      type: research_paper
+      base_url: "https://export.arxiv.org/api/query"
+      rate_limit_per_second: 3
+      requires_browser: false
+      categories:
+        - cs.AI
+        - cs.LG
+        - cs.CV
+        - cs.CL
+        - stat.ML
+
+    - name: papers_with_code
+      type: research_paper
+      base_url: "https://paperswithcode.com/api/v1/papers/"
+      rate_limit_per_second: 2
+      requires_browser: false
+
+  startups:
+    - name: ycombinator
+      type: startup
+      base_url: "https://www.ycombinator.com/companies"
+      rate_limit_per_second: 1
+      requires_browser: true
+
+    - name: f6s
+      type: startup
+      base_url: "https://www.f6s.com/companies/artificial-intelligence/co"
+      rate_limit_per_second: 1
+      requires_browser: false
+
+  products:
+    - name: futurepedia
+      type: product
+      base_url: "https://www.futurepedia.io/ai-tools"
+      rate_limit_per_second: 1
+      requires_browser: false
+
+    - name: theresanaiforthat
+      type: product
+      base_url: "https://theresanaiforthat.com"
+      rate_limit_per_second: 1
+      requires_browser: false
+
+  news:
+    - name: techcrunch_ai
+      type: news
+      base_url: "https://techcrunch.com/category/artificial-intelligence/"
+      rss_url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+      rate_limit_per_second: 1
+      requires_browser: false
+
+    - name: venturebeat_ai
+      type: news
+      base_url: "https://venturebeat.com/category/ai/"
+      rss_url: "https://venturebeat.com/category/ai/feed/"
+      rate_limit_per_second: 1
+      requires_browser: false
+
+    - name: theaibeat
+      type: news
+      base_url: "https://theaibeat.com"
+      rss_url: "https://theaibeat.com/feed/"
+      rate_limit_per_second: 1
+      requires_browser: false
+
+    - name: mit_news_ai
+      type: news
+      base_url: "https://news.mit.edu/topic/artificial-intelligence2"
+      rss_url: "https://news.mit.edu/rss/topic/artificial-intelligence"
+      rate_limit_per_second: 0.5
+      requires_browser: false
+
+    - name: deepmind_blog
+      type: news
+      base_url: "https://deepmind.google/discover/blog/"
+      rss_url: "https://deepmind.google/blog/rss.xml"
+      rate_limit_per_second: 0.5
+      requires_browser: false
+
+  jobs:
+    - name: aijobs
+      type: jobs
+      base_url: "https://aijobs.net"
+      rate_limit_per_second: 1
+      requires_browser: false
+
+    - name: hn_who_is_hiring
+      type: jobs
+      base_url: "https://hn.algolia.com/api/v1/search_by_date"
+      rate_limit_per_second: 2
+      requires_browser: false
+
+    - name: remoteok_ai
+      type: jobs
+      base_url: "https://remoteok.com/remote-ai-jobs"
+      rate_limit_per_second: 0.5
+      requires_browser: false
+
+    - name: wellfound_ai
+      type: jobs
+      base_url: "https://wellfound.com/role/r/artificial-intelligence"
+      rate_limit_per_second: 0.5
+      requires_browser: true
+
+    - name: workatastartup
+      type: jobs
+      base_url: "https://www.workatastartup.com/jobs?role=eng&remote=true"
+      rate_limit_per_second: 1
+      requires_browser: false

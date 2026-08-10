@@ -1,0 +1,7 @@
+# Project Limitations & Risks
+
+1. **Accessing Protected Sources**: For protected sources (e.g., Cloudflare or Datadome-protected HTML pages), production scraping prioritizes official APIs, RSS/public feeds, permitted browser retrieval (e.g., Playwright), source-specific integrations, bounded concurrency, and exponential backoff. If a source remains inaccessible or blocks the request, the pipeline isolates the source failure, logs the limitation, and continues processing via alternate sources rather than attempting to bypass security controls.
+2. **Computational Overhead of Semantic Chunking**: The `tiktoken` based chunking algorithm operates synchronously. While fast, splitting massive HTML documents across 25 concurrent workers can block the Python event loop. Production requires offloading CPU-bound chunking to a `ProcessPoolExecutor`.
+3. **Google Sheets API Quotas**: The `gspread` API is subject to Google's strict write quota (60 requests per minute per project). Large export batches might fail if not explicitly paced or batched appropriately.
+4. **Fuzzy Match False Positives**: The Entity Resolver currently uses a strict 85.0 confidence threshold via `RapidFuzz` WRatio. Unseen international suffixes (e.g., GmbH, Pty Ltd) might skew similarity scores.
+5. **No Javascript Rendering**: The pipeline relies on static HTML parsing for speed. Sites requiring deep SPA rendering (React/Vue) will return empty bodies unless explicitly configured to use a rendering fallback.

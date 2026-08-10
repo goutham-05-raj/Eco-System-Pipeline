@@ -1,0 +1,17 @@
+.env
+credentials.json
+*-service-account.json
+# graphone.db is committed so Streamlit Cloud can read it
+# *.db
+*.pyc
+__pycache__/
+.venv/
+venv/
+data/raw/
+*.log
+dist/
+.pytest_cache/
+*.egg-info/
+.mypy_cache/
+htmlcov/
+.coverage

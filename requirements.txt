@@ -1,0 +1,57 @@
+aiohttp
+httpx
+playwright
+
+# Data / validation
+pydantic
+pydantic-settings
+
+# Database
+sqlalchemy
+alembic
+aiosqlite
+
+# LLM providers
+google-generativeai
+groq
+openai
+tiktoken
+
+# HTML / parsing
+beautifulsoup4
+lxml
+python-dateutil
+dateparser
+feedparser
+
+# Entity resolution
+rapidfuzz
+
+# Export
+gspread
+google-auth
+
+# Observability
+structlog
+
+# Dev / test
+pytest
+pytest-asyncio
+pytest-mock
+
+# Config
+pyyaml
+python-dotenv
+
+# Utilities
+tenacity
+aiofiles
+
+# API Backend
+fastapi
+uvicorn
+
+# Dashboard
+streamlit
+altair
+pandas
