@@ -20,7 +20,7 @@ st.markdown("<div class='subtext'>Canonical directory of AI organizations and fo
 def fetch_startups():
     async def _fetch():
         async with AsyncSessionLocal() as session:
-            result = await session.execute(select(Startup))
+            result = await session.execute(select(Startup).order_by(Startup.updated_at.desc()))
             return result.scalars().all()
     
     try:
@@ -36,7 +36,7 @@ def fetch_startups():
             "Startup Name": s.canonical_name or s.raw_name,
             "Employees": s.employee_count,
             "Source": s.source_name,
-            "Collected": s.created_at.strftime("%Y-%m-%d %H:%M") if s.created_at else "Unknown",
+            "Collected": (s.updated_at or s.created_at).strftime("%Y-%m-%d %H:%M") if (s.updated_at or s.created_at) else "Unknown",
             "Source URL": s.source_url
         })
     return pd.DataFrame(data)

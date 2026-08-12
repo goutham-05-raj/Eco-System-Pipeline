@@ -19,6 +19,7 @@ from src.validation.freshness import is_fresh
 from src.extraction.schemas import (
     ResearchPaperSchema, StartupSchema, ProductSchema, JobSchema, NewsSchema
 )
+from src.llm.orchestrator import LLMOrchestrator
 from src.config.logging import get_logger
 
 log = get_logger("runner")
@@ -32,6 +33,7 @@ class PipelineRunner:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.run_id = f"run_{uuid.uuid4().hex[:8]}"
+        self.llm = LLMOrchestrator()
         log.info("pipeline_initialized", run_id=self.run_id)
 
     async def run_research_pipeline(self, max_items: int = 1000) -> None:
@@ -109,11 +111,52 @@ class PipelineRunner:
         crawler = ProductCrawler()
         repo = ProductRepository(self.session)
 
+        from src.extraction.heuristics import extract_pricing_heuristic
+        import asyncio
+
         products = await crawler.crawl_all()
+        llm_calls_made = 0
+        MAX_LLM_ENRICHMENTS = 10  # Cap LLM calls per run to respect Gemini Free Tier 15 RPM limit
+
         for p in products:
             p["run_id"] = self.run_id
             if not validate_provenance(p, ["product_name", "source_url"]):
                 continue
+
+            # 1. Apply fast heuristic extraction
+            if p.get("pricing_model") is None:
+                heuristic_model = extract_pricing_heuristic(p["product_name"])
+                if heuristic_model:
+                    p["pricing_model"] = heuristic_model
+
+            # 2. LLM Enrichment for remaining missing fields (throttled)
+            if (p.get("startup_name") is None or p.get("pricing_model") is None) and llm_calls_made < MAX_LLM_ENRICHMENTS:
+                schema_hint = {
+                    "startup_name": "string (the company that made the product, or None)",
+                    "pricing_model": "string (one of: FREE, FREEMIUM, PAID, ENTERPRISE) or None"
+                }
+                prompt = (
+                    "Extract the company/startup name and the pricing model from the product details. "
+                    "If the company name is not mentioned, return null/None. "
+                    "If the pricing model is not clear, return null/None."
+                )
+                text_context = f"Product Name/Title: {p['product_name']}"
+                
+                try:
+                    llm_calls_made += 1
+                    extracted = await self.llm.extract(text=text_context, schema_hint=schema_hint, prompt=prompt)
+                    if extracted:
+                        if p.get("startup_name") is None and extracted.get("startup_name"):
+                            p["startup_name"] = extracted["startup_name"]
+                        if p.get("pricing_model") is None and extracted.get("pricing_model"):
+                            model = str(extracted["pricing_model"]).upper()
+                            if model in ["FREE", "FREEMIUM", "PAID", "ENTERPRISE"]:
+                                p["pricing_model"] = model
+                except Exception as exc:
+                    log.warning("llm_product_enrichment_failed", error=str(exc), product=p["product_name"])
+                
+                # Throttle to stay within Free Tier Rate Limit (15 RPM = 4s per request)
+                await asyncio.sleep(1.0)
 
             valid = validate_record(ProductSchema, p)
             if valid:
@@ -158,12 +201,16 @@ class PipelineRunner:
                 continue
 
             from src.extraction.dates import extract_date
+            from datetime import datetime, timezone
             dt_info = extract_date("", {}, j.get("published_raw", ""))
-            j["published_at"] = dt_info["published_at"]
+            # Fall back to now() when source doesn't provide a date (e.g. aijobs.net)
+            j["published_at"] = dt_info["published_at"] or datetime.now(timezone.utc)
             j["date_extraction_method"] = dt_info["method"]
             j["date_confidence"] = dt_info["confidence"]
+            j["collected_at"] = datetime.now(timezone.utc)
 
-            if not is_fresh(j["published_at"], 24):
+            # Job listings are relevant for 7 days (unlike news which is 24 hours)
+            if not is_fresh(j["published_at"], 168):
                 continue
 
             valid = validate_record(JobSchema, j)
