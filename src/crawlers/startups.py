@@ -117,13 +117,13 @@ class StartupCrawler:
         all_results: list[dict] = []
 
         yc = YCombinatorCrawler()
-        yc_pages = min(max_per_source // 10, 30)
+        yc_pages = min(max_per_source // 10, 60)
         yc_results = await yc.crawl(max_pages=yc_pages)
         all_results.extend(yc_results)
         log.info("startup_source_done", source="ycombinator", count=len(yc_results))
 
         f6s = F6SCrawler()
-        f6s_pages = min(max_per_source // 10, 50)
+        f6s_pages = min(max_per_source // 10, 100)
         f6s_results = await f6s.crawl(max_pages=f6s_pages)
         all_results.extend(f6s_results)
         log.info("startup_source_done", source="f6s", count=len(f6s_results))

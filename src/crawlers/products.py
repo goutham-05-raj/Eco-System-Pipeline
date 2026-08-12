@@ -171,7 +171,7 @@ class HackerNewsProductCrawler:
 class ProductCrawler:
     async def crawl_all(self, max_per_source: int = 2000) -> list[dict]:
         all_results: list[dict] = []
-        pages = min(max_per_source // 10, 60)
+        pages = min(max_per_source // 10, 100)
 
         fp = FuturepediaCrawler()
         fp_results = await fp.crawl(max_pages=pages)
