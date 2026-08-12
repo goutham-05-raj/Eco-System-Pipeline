@@ -11,8 +11,11 @@ class Settings(BaseSettings):
 
     # LLM Providers
     gemini_api_key: str = Field(default="")
+    gemini_model: str = Field(default="gemini-2.0-flash")
     groq_api_key: str = Field(default="")
+    groq_model: str = Field(default="llama-3.3-70b-versatile")
     deepseek_api_key: str = Field(default="")
+    deepseek_model: str = Field(default="deepseek-chat")
 
     # GitHub
     github_token: str = Field(default="")

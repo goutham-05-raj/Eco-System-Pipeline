@@ -23,7 +23,7 @@ async def main() -> None:
         await runner.run_products_pipeline()
         
         # 3. Research Papers
-        await runner.run_research_pipeline(max_items=1000)
+        await runner.run_research_pipeline(max_items=50)
         
         # 4. Jobs
         await runner.run_jobs_pipeline()

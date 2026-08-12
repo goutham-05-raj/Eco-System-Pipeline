@@ -38,7 +38,7 @@ def fetch_products():
             "Company": p.startup_name or "Unknown",
             "Pricing": p.pricing_model or "UNKNOWN",
             "Source": p.source_name,
-            "Collected": p.created_at.strftime("%Y-%m-%d %H:%M") if p.created_at else "Unknown",
+            "Collected": (p.updated_at or p.created_at).strftime("%Y-%m-%d %H:%M") if (p.updated_at or p.created_at) else "Unknown",
             "Source URL": p.source_url
         })
     return pd.DataFrame(data)

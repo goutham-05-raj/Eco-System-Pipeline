@@ -37,7 +37,7 @@ class PapersWithCodeCrawler:
         url = f"{PWC_API}?arxiv_id={arxiv_id}"
         try:
             resp = await client.get(url, rps=2.0, source_name="papers_with_code")
-            if resp.status == 200:
+            if resp.status == 200 and resp.text and resp.text.strip().startswith("{"):
                 data = json.loads(resp.text)
                 return self._extract_github_url(data)
         except Exception as exc:

@@ -26,6 +26,10 @@ class ResearchPaperRepository:
         )
         existing = result.scalar_one_or_none()
         if existing:
+            existing.updated_at = datetime.now(timezone.utc)
+            if data.get("run_id"):
+                existing.run_id = data["run_id"]
+            await self.session.commit()
             return existing, False
 
         authors_raw = data.get("authors", [])
@@ -76,6 +80,10 @@ class StartupRepository:
         )
         existing = result.scalar_one_or_none()
         if existing:
+            existing.updated_at = datetime.now(timezone.utc)
+            if data.get("run_id"):
+                existing.run_id = data["run_id"]
+            await self.session.commit()
             return existing, False
         record = Startup(
             content_id=data["content_id"],
@@ -110,6 +118,14 @@ class ProductRepository:
         )
         existing = result.scalar_one_or_none()
         if existing:
+            if existing.startup_name is None and data.get("startup_name"):
+                existing.startup_name = data["startup_name"]
+            if existing.pricing_model is None and data.get("pricing_model"):
+                existing.pricing_model = data["pricing_model"]
+            existing.updated_at = datetime.now(timezone.utc)
+            if data.get("run_id"):
+                existing.run_id = data["run_id"]
+            await self.session.commit()
             return existing, False
         record = Product(
             content_id=data["content_id"],
@@ -139,6 +155,10 @@ class JobRepository:
         )
         existing = result.scalar_one_or_none()
         if existing:
+            existing.updated_at = datetime.now(timezone.utc)
+            if data.get("run_id"):
+                existing.run_id = data["run_id"]
+            await self.session.commit()
             return existing, False
         record = Job(
             content_id=data["content_id"],
@@ -177,6 +197,10 @@ class NewsRepository:
         )
         existing = result.scalar_one_or_none()
         if existing:
+            existing.updated_at = datetime.now(timezone.utc)
+            if data.get("run_id"):
+                existing.run_id = data["run_id"]
+            await self.session.commit()
             return existing, False
         record = News(
             content_id=data["content_id"],
