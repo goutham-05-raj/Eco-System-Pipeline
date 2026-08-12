@@ -44,6 +44,13 @@ class LLMOrchestrator:
         if not self.providers:
             return {}
 
+        # Intelligent Chunking: Prevent 413 Payload Too Large
+        # Retain the first 7500 and last 7500 chars (most semantically dense parts)
+        MAX_CHARS = 15000
+        if len(text) > MAX_CHARS:
+            log.warning("llm_payload_truncated", original_len=len(text))
+            text = text[:7500] + "\n\n...[TRUNCATED]...\n\n" + text[-7500:]
+
         last_error = None
         for provider in self.providers:
             try:

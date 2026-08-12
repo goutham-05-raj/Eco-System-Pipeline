@@ -178,6 +178,24 @@ class PipelineRunner:
             # extraction fallback
             from src.extraction.dates import extract_date
             dt_info = extract_date("", {}, n.get("raw_published", ""))
+            
+            # Intelligent Heuristic: If missing date, check if we've seen it before
+            if not dt_info["published_at"]:
+                from sqlalchemy import select
+                from src.models.news import News
+                existing = await self.session.execute(select(News).where(News.content_id == n["content_id"]))
+                existing = existing.scalar_one_or_none()
+                
+                if existing and existing.collected_at:
+                    dt_info["published_at"] = existing.collected_at
+                    dt_info["method"] = "heuristic_inherited"
+                    dt_info["confidence"] = 0.5
+                else:
+                    from datetime import datetime, timezone
+                    dt_info["published_at"] = datetime.now(timezone.utc)
+                    dt_info["method"] = "heuristic_new"
+                    dt_info["confidence"] = 0.1
+
             n["published_at"] = dt_info["published_at"]
             n["date_extraction_method"] = dt_info["method"]
             n["date_confidence"] = dt_info["confidence"]
@@ -203,8 +221,23 @@ class PipelineRunner:
             from src.extraction.dates import extract_date
             from datetime import datetime, timezone
             dt_info = extract_date("", {}, j.get("published_raw", ""))
-            # Fall back to now() when source doesn't provide a date (e.g. aijobs.net)
-            j["published_at"] = dt_info["published_at"] or datetime.now(timezone.utc)
+            # Intelligent Heuristic: If missing date, check if we've seen it before
+            if not dt_info["published_at"]:
+                from sqlalchemy import select
+                from src.models.job import Job
+                existing = await self.session.execute(select(Job).where(Job.content_id == j["content_id"]))
+                existing = existing.scalar_one_or_none()
+                
+                if existing and existing.collected_at:
+                    dt_info["published_at"] = existing.collected_at
+                    dt_info["method"] = "heuristic_inherited"
+                    dt_info["confidence"] = 0.5
+                else:
+                    dt_info["published_at"] = datetime.now(timezone.utc)
+                    dt_info["method"] = "heuristic_new"
+                    dt_info["confidence"] = 0.1
+
+            j["published_at"] = dt_info["published_at"]
             j["date_extraction_method"] = dt_info["method"]
             j["date_confidence"] = dt_info["confidence"]
             j["collected_at"] = datetime.now(timezone.utc)

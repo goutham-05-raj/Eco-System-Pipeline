@@ -163,6 +163,82 @@ class RemoteOKCrawler:
         return results
 
 
+class RemotiveCrawler:
+    """Crawls Remotive jobs using their public API."""
+    API = "https://remotive.com/api/remote-jobs?search=ai"
+
+    async def crawl(self, max_items: int = 200) -> list[dict]:
+        try:
+            async with HttpClient() as client:
+                resp = await client.get(self.API, rps=1.0, source_name="remotive")
+                if resp.status != 200:
+                    return []
+                data = json.loads(resp.text)
+        except Exception as exc:
+            log.error("remotive_error", error=str(exc))
+            return []
+
+        results = []
+        for item in data.get("jobs", []):
+            title = item.get("title", "").strip()
+            url = item.get("url", "")
+            if not title or not url:
+                continue
+            norm = normalise_url(url)
+            results.append({
+                "title": title,
+                "company": item.get("company_name"),
+                "source_name": "remotive",
+                "source_url": norm,
+                "content_id": content_id_from_url(norm),
+                "is_remote": True,
+                "published_raw": item.get("publication_date", ""),
+            })
+            if len(results) >= max_items:
+                break
+        return results
+
+class WeWorkRemotelyCrawler:
+    """Crawls We Work Remotely via their public RSS feed."""
+    RSS = "https://weworkremotely.com/categories/remote-programming-jobs.rss"
+
+    async def crawl(self) -> list[dict]:
+        import feedparser
+        try:
+            async with HttpClient() as client:
+                resp = await client.get(self.RSS, rps=1.0, source_name="weworkremotely")
+                if resp.status != 200:
+                    return []
+                feed = feedparser.parse(resp.text)
+        except Exception as exc:
+            log.error("wwr_error", error=str(exc))
+            return []
+
+        results = []
+        for entry in feed.entries:
+            title = entry.get("title", "").strip()
+            # Title often looks like: "Company Name: Job Title"
+            company = None
+            if ":" in title:
+                company, title = title.split(":", 1)
+                company = company.strip()
+                title = title.strip()
+                
+            url = entry.get("link", "")
+            if not title or not url or ("ai" not in title.lower() and "machine learning" not in title.lower() and "data" not in title.lower()):
+                continue
+            norm = normalise_url(url)
+            results.append({
+                "title": title,
+                "company": company,
+                "source_name": "weworkremotely",
+                "source_url": norm,
+                "content_id": content_id_from_url(norm),
+                "is_remote": True,
+                "published_raw": entry.get("published", ""),
+            })
+        return results
+
 class JobsCrawler:
     async def crawl_all(self) -> list[dict]:
         all_jobs: list[dict] = []
@@ -175,6 +251,12 @@ class JobsCrawler:
 
         remoteok = RemoteOKCrawler()
         all_jobs.extend(await remoteok.crawl())
+
+        remotive = RemotiveCrawler()
+        all_jobs.extend(await remotive.crawl())
+
+        wwr = WeWorkRemotelyCrawler()
+        all_jobs.extend(await wwr.crawl())
 
         # Deduplicate
         seen: set[str] = set()
