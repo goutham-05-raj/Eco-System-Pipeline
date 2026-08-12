@@ -1,7 +1,5 @@
 # GraphOne / FrontierAtlas Intelligence Pipeline
 
-**Live Demo**: [Click here to view the Streamlit Dashboard](YOUR_STREAMLIT_LINK_HERE)
-
 This repository contains the complete implementation for the GraphOne Data Intelligence pipeline, designed to seamlessly extract, enrich, and canonicalize massive volumes of semi-structured web data across the AI and venture ecosystem.
 
 ## Features
