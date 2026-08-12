@@ -1,92 +1,66 @@
-# GraphOne Intelligence Engine
+# GraphOne / FrontierAtlas Intelligence Pipeline
 
-## 1. Overview
-A production-ready data engineering and intelligence pipeline that asynchronously scrapes, cleans, extracts, and resolves entity data across startups, AI products, research papers, tech jobs, and AI news. Built for the GraphOne / FrontierAtlas AI Engineer assessment.
+This repository contains the complete implementation for the GraphOne Data Intelligence pipeline, designed to seamlessly extract, enrich, and canonicalize massive volumes of semi-structured web data across the AI and venture ecosystem.
 
-## 2. Architecture
-The system consists of an async Python crawler backend, a SQLAlchemy SQLite database, a fallback LLM orchestrator, a Google Sheets exporter, and a Streamlit observability dashboard. (See `architecture.pdf` for the detailed flow).
+## Features
 
-## 3. Features
-- Async Queue-Based Ingestion
-- Multi-LLM Fallback (Gemini -> Groq -> DeepSeek)
-- Exact/Fuzzy Entity Resolution
-- Streamlit Demo Dashboard
-- Google Sheets Service Account Sync
+- **Massive Scalability**: Asynchronous `aiohttp` pipelines structured for non-blocking I/O, capable of processing thousands of entities concurrently.
+- **Extreme Freshness Engine**: Intelligently normalizes JSON-LD, OpenGraph, and `<time>` HTML meta-tags. Backed by deterministic hashing (`content_id`) to track 24-hour exact freshness and prevent duplicates.
+- **Multi-Tier LLM Extraction**: Orchestrator dynamically routes JSON schema extraction across Groq, Gemini, and DeepSeek with exponential backoff and jitter for `429 Too Many Requests` handling. Implements intelligent payload truncation to prevent `413 Payload Too Large` errors.
+- **Deterministic Entity Resolution**: Utilizes `rapidfuzz` to canonicalize raw startup names (e.g. "Open AI Inc.") against a mock 50-entity seed index.
+- **Anti-Bot Defenses**: Features dynamic HTTP headers and automated delay jittering to prevent CAPTCHA triggering on high-value intelligence sources.
 
-## 4. Data Sources
-- **Startups**: YCombinator API, F6S.
-- **Products**: HackerNews Algolia API, Futurepedia, There's An AI For That.
-- **Papers**: arXiv API, PapersWithCode, GitHub API.
-- **Jobs**: AIJobs, HackerNews, RemoteOK.
-- **News**: RSS Feeds (TechCrunch, VentureBeat, KDnuggets, AI News, Google AI).
+## Setup Instructions
 
-## 5. Data Integrity
-Every record enforces provenance strictly via Pydantic. If an LLM hallucinates a URL, the row is rejected entirely. Duplicate processing is safely handled via `content_id` hashes enabling idempotent Upserts.
+### 1. Prerequisites
+Ensure you have Python 3.10+ and Node.js installed.
 
-## 6. LLM Orchestration
-The pipeline gracefully recovers from LLM rate limits by cascading sequentially through Gemini (Primary), Groq (Fast Fallback), and DeepSeek (Final Fallback).
+### 2. Environment Variables
+Create a `.env` file in the root directory and populate it with your API keys:
+```env
+# LLM Providers (Comma-separated for key rotation)
+GROQ_API_KEY=your_groq_key
+GEMINI_API_KEY=your_gemini_key
+DEEPSEEK_API_KEY=your_deepseek_key
 
-## 7. 429 Handling
-HTTP 429s trigger an exponential backoff sequence respecting `Retry-After` headers, wrapped around a TokenBucket rate limiter.
+# Model Selection
+GROQ_MODEL=llama-3.3-70b-versatile
+GEMINI_MODEL=gemini-2.5-flash
 
-## 8. 413 Handling
-Semantic chunking via `tiktoken` bounds large HTML payloads to strict context window limits.
+# Orchestration Settings
+LLM_PROVIDER_ORDER=groq,gemini,deepseek
+LLM_MAX_RETRIES=4
 
-## 9. Entity Resolution
-Uses `RapidFuzz` to normalize names (e.g., "OpenAI Inc." -> "OpenAI") with strict confidence thresholds.
+# GitHub API (For Research Paper stars)
+GITHUB_TOKEN=your_github_token
+```
 
-## 10. Freshness
-Enforces strict 24-hour UTC boundaries on News and Jobs using a 7-tier date parser.
-
-## 11. Database
-Async SQLAlchemy over SQLite (`graphone.db`) for local testing.
-
-## 12. Google Sheets
-Dynamically provisions and updates 6 tabs inside Google Sheets without duplicating rows.
-
-## 13. Dashboard
-A read-only professional Streamlit application that surfaces database metrics and intelligence.
-
-## 14. Installation
+### 3. Backend Setup
+Install the python dependencies:
 ```bash
-python -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
-pip install fpdf2 streamlit pandas
 ```
 
-## 15. Environment Setup
-Create a `.env` file from `.env.example`:
-```
-GOOGLE_SERVICE_ACCOUNT_JSON=...
-GOOGLE_SHEET_ID=...
-```
-
-## 16. Running Pipeline
+Run the backend FastAPI server:
 ```bash
-python run.py
+python -m uvicorn api.main:app --reload --port 8000
 ```
 
-## 17. Running Dashboard
+### 4. Frontend Setup
+In a new terminal, navigate to the frontend directory:
 ```bash
-streamlit run dashboard/app.py
+cd frontend
+npm install
+npm run dev
 ```
+Navigate to the provided localhost port (e.g. `http://localhost:5173`) to view the Glassmorphism Intelligence Dashboard.
 
-## 18. Running Tests
+### 5. Exporting Data
+To generate the final CSVs formatted exactly to the required nested schemas for Google Sheets submission, run:
 ```bash
-pytest -q
+python export.py
 ```
+The final CSVs will be available in the `exports/` folder.
 
-## 19. Benchmark
-Controlled ingestion benchmark simulating network latency:
-```bash
-python scripts/run_benchmark.py
-```
-
-## 20. Known Limitations
-- Single IP scraping is subject to Cloudflare blocks.
-- Synchronous semantic chunking can block the event loop under heavy load.
-- Google Sheets is bound to a 60-request-per-minute write quota.
-
-## 21. Production Scaling
-Horizontal scaling via Celery pods reading off Kafka/RabbitMQ into a PostgreSQL cluster with PgBouncer connection pooling.
+## Architecture Documentation
+Please see [architecture.md](./architecture.md) (or the generated PDF equivalent) for a detailed technical design addressing Scale, 413/429 handling, Freshness Tracking, and our Database storage strategy.
